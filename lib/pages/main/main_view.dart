@@ -1,81 +1,25 @@
-import 'package:file_picker_galery/pages/main/main_screen.dart';
-import 'package:file_picker_galery/pages/splash/splash_screen.dart';
-import 'package:file_picker_galery/tabbar/tabbar_screen.dart';
-import 'package:file_picker_galery/utils/app_routes.dart';
-import 'package:file_picker_galery/utils/app_theme.dart';
+import 'dart:io';
+
 import 'package:file_picker_galery/utils/app_utils.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:photo_gallery/photo_gallery.dart';
+import 'package:transparent_image/transparent_image.dart';
+import 'package:video_player/video_player.dart';
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: AppUtils.themeMode,
-      builder: (context, value, child) => ScreenUtilInit(
-        designSize: const Size(375, 812),
-        minTextAdapt: true,
-        splitScreenMode: true,
-        builder: (context, child) => MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'Flutter Demo',
-            themeMode: value,
-
-            /// light [theme]
-            theme: AppTheme.lightTehem,
-
-            /// dark [theme]
-            darkTheme: AppTheme.darkTheme,
-            routes: {
-              AppRoutes.mainPage: (_) => const MainScreen(),
-              AppRoutes.tabbarPage: (_) => const TabbarScreen(),
-            },
-            home: const SplashScreen()),
-      ),
-    );
-  }
-}
-
-
-/*
-class MyAppPage extends StatefulWidget {
-  const MyAppPage({super.key});
+class MainView extends StatefulWidget {
+  const MainView({super.key});
 
   @override
-  State<MyAppPage> createState() => _MyAppPageState();
+  State<MainView> createState() => _MainViewState();
 }
 
-class _MyAppPageState extends State<MyAppPage> {
+class _MainViewState extends State<MainView> {
+  Size? size;
   List<Album>? _albums;
   bool _loading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loading = true;
-    initAsync();
-  }
-
-  Future<void> initAsync() async {
-    if (await _promptPermissionSetting()) {
-      List<Album> albums =
-          await PhotoGallery.listAlbums(mediumType: MediumType.image);
-      setState(() {
-        _albums = albums;
-         _loading = false;
-      });
-    }
-    setState(() {
-      _loading = false;
-    });
-  }
 
   Future<bool> _promptPermissionSetting() async {
     if (Platform.isIOS &&
@@ -87,12 +31,95 @@ class _MyAppPageState extends State<MyAppPage> {
     return false;
   }
 
+  Future<void> initAsync() async {
+    if (await _promptPermissionSetting()) {
+      List<Album> albums =
+          await PhotoGallery.listAlbums(mediumType: MediumType.image);
+      setState(() {
+        _albums = albums;
+        _loading = false;
+      });
+    }
+    setState(() {
+      _loading = false;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loading = true;
+    initAsync();
+  }
+
+  @override
+  void didChangeDependencies() {
+    size = MediaQuery.of(context).size;
+    super.didChangeDependencies();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Photo gallery example'),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
+      //? drawer
+
+      drawer: Drawer(
+        backgroundColor: Theme.of(context).drawerTheme.backgroundColor,
+        child: SingleChildScrollView(
+          child: Container(
+            child: Column(
+              children: [
+                //image
+                SizedBox(
+                  width: double.infinity,
+                  height: 180.h,
+                  child: Image.asset(
+                    "assets/images/splash.png",
+                    fit: BoxFit.fitWidth,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
+
+      //? app bar
+
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).backgroundColor,
+        elevation: .0,
+        title: const Text('Photos Gallery'),
+        leading: Builder(
+          builder: (BuildContext context) {
+            return IconButton(
+              padding: EdgeInsets.zero,
+              color: Theme.of(context).bottomAppBarColor,
+              icon: Icon(
+                CupertinoIcons.bars,
+                size: 28.w,
+              ),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+              tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+            );
+          },
+        ),
+        actions: [
+          IconButton(
+              onPressed: () {},
+              icon: Icon(
+                CupertinoIcons.ellipsis_vertical,
+                color: Theme.of(context).bottomAppBarColor,
+              )),
+        ],
+      ),
+
+      //? body
+
       body: _loading
           ? const Center(
               child: CircularProgressIndicator(),
@@ -168,11 +195,17 @@ class _MyAppPageState extends State<MyAppPage> {
                 );
               },
             ),
+
+      //? floting action button them changer
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          AppUtils.themeChanger();
+        },
+      ),
     );
   }
 }
-
-//sfyiuuuuuuuuuuuuuuhhhhhhhhhfdsi
 
 class AlbumPage extends StatefulWidget {
   final Album album;
@@ -336,4 +369,3 @@ class _VideoProviderState extends State<VideoProvider> {
           );
   }
 }
-*/
