@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:file_picker_galery/pages/viewer/viewer_view.dart';
 import 'package:file_picker_galery/utils/app_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -136,11 +137,11 @@ class _MainViewState extends State<MainView> {
               crossAxisCount: 3,
               mainAxisSpacing: 1.0,
               crossAxisSpacing: 1.0,
-              children: <Widget>[
+              children: [
                 ..._listMedium!.map(
                   (item) => GestureDetector(
                     onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => ViewerPage(item))),
+                        builder: (context) => ViewerView(item))),
                     child: Container(
                       color: Colors.grey[300],
                       child: FadeInImage(
@@ -164,35 +165,6 @@ class _MainViewState extends State<MainView> {
         onPressed: () {
           AppUtils.themeChanger();
         },
-      ),
-    );
-  }
-}
-
-class ViewerPage extends StatelessWidget {
-  final Medium medium;
-
-  const ViewerPage(Medium medium) : medium = medium;
-
-  @override
-  Widget build(BuildContext context) {
-    DateTime? date = medium.creationDate ?? medium.modifiedDate;
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back_ios),
-          ),
-          title: date != null ? Text(date.toLocal().toString()) : null,
-        ),
-        body: Container(
-            alignment: Alignment.center,
-            child: FadeInImage(
-              fit: BoxFit.cover,
-              placeholder: MemoryImage(kTransparentImage),
-              image: PhotoProvider(mediumId: medium.id),
-            )),
       ),
     );
   }
