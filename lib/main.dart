@@ -34,6 +34,7 @@ class MyApp extends StatelessWidget {
             /// dark [theme]
             darkTheme: AppTheme.darkTheme,
             routes: {
+              AppRoutes.splashPage: (_) => const SplashScreen(),
               AppRoutes.mainPage: (_) => const MainScreen(),
               AppRoutes.tabbarPage: (_) => const TabbarScreen(),
             },

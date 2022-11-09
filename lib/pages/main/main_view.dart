@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:file_picker_galery/utils/app_utils.dart';
@@ -7,7 +8,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_gallery/photo_gallery.dart';
 import 'package:transparent_image/transparent_image.dart';
-import 'package:video_player/video_player.dart';
 
 class MainView extends StatefulWidget {
   const MainView({super.key});
@@ -19,6 +19,8 @@ class MainView extends StatefulWidget {
 class _MainViewState extends State<MainView> {
   Size? size;
   List<Album>? _albums;
+  MediaPage? _medium;
+  List<Medium>? _listMedium;
   bool _loading = false;
 
   Future<bool> _promptPermissionSetting() async {
@@ -33,11 +35,14 @@ class _MainViewState extends State<MainView> {
 
   Future<void> initAsync() async {
     if (await _promptPermissionSetting()) {
+      log(_promptPermissionSetting().toString());
       List<Album> albums =
           await PhotoGallery.listAlbums(mediumType: MediumType.image);
+      _medium = await albums.first.listMedia();
       setState(() {
         _albums = albums;
         _loading = false;
+        _listMedium = _medium!.items;
       });
     }
     setState(() {
@@ -91,7 +96,10 @@ class _MainViewState extends State<MainView> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).backgroundColor,
         elevation: .0,
-        title: const Text('Photos Gallery'),
+        title: Text(
+          'Photos Gallery',
+          style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontSize: 25),
+        ),
         leading: Builder(
           builder: (BuildContext context) {
             return IconButton(
@@ -124,76 +132,30 @@ class _MainViewState extends State<MainView> {
           ? const Center(
               child: CircularProgressIndicator(),
             )
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                double gridWidth = (constraints.maxWidth - 20) / 3;
-                double gridHeight = gridWidth + 33;
-                double ratio = gridWidth / gridHeight;
-                return Container(
-                  padding: const EdgeInsets.all(5),
-                  child: GridView.count(
-                    childAspectRatio: ratio,
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 5.0,
-                    crossAxisSpacing: 5.0,
-                    children: <Widget>[
-                      ...?_albums?.map(
-                        (album) => GestureDetector(
-                          onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                  builder: (context) => AlbumPage(album))),
-                          child: Column(
-                            children: <Widget>[
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(5.0),
-                                child: Container(
-                                  color: Colors.grey[300],
-                                  height: gridWidth,
-                                  width: gridWidth,
-                                  child: FadeInImage(
-                                    fit: BoxFit.cover,
-                                    placeholder: MemoryImage(kTransparentImage),
-                                    image: AlbumThumbnailProvider(
-                                      albumId: album.id,
-                                      mediumType: album.mediumType,
-                                      highQuality: true,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                alignment: Alignment.topLeft,
-                                padding: const EdgeInsets.only(left: 2.0),
-                                child: Text(
-                                  album.name ?? "Unnamed Album",
-                                  maxLines: 1,
-                                  textAlign: TextAlign.start,
-                                  style: const TextStyle(
-                                    height: 1.2,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                alignment: Alignment.topLeft,
-                                padding: const EdgeInsets.only(left: 2.0),
-                                child: Text(
-                                  album.count.toString(),
-                                  textAlign: TextAlign.start,
-                                  style: const TextStyle(
-                                    height: 1.2,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+          : GridView.count(
+              crossAxisCount: 3,
+              mainAxisSpacing: 1.0,
+              crossAxisSpacing: 1.0,
+              children: <Widget>[
+                ..._listMedium!.map(
+                  (item) => GestureDetector(
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => ViewerPage(item))),
+                    child: Container(
+                      color: Colors.grey[300],
+                      child: FadeInImage(
+                        fit: BoxFit.cover,
+                        placeholder: MemoryImage(kTransparentImage),
+                        image: ThumbnailProvider(
+                          mediumId: item.id,
+                          mediumType: item.mediumType,
+                          highQuality: true,
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                );
-              },
+                ),
+              ],
             ),
 
       //? floting action button them changer
@@ -202,72 +164,6 @@ class _MainViewState extends State<MainView> {
         onPressed: () {
           AppUtils.themeChanger();
         },
-      ),
-    );
-  }
-}
-
-class AlbumPage extends StatefulWidget {
-  final Album album;
-
-  const AlbumPage(Album album) : album = album;
-
-  @override
-  State<StatefulWidget> createState() => AlbumPageState();
-}
-
-class AlbumPageState extends State<AlbumPage> {
-  List<Medium>? _media;
-
-  @override
-  void initState() {
-    super.initState();
-    initAsync();
-  }
-
-  void initAsync() async {
-    MediaPage mediaPage = await widget.album.listMedia();
-    setState(() {
-      _media = mediaPage.items;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: Text(widget.album.name ?? "Unnamed Album"),
-        ),
-        body: GridView.count(
-          crossAxisCount: 3,
-          mainAxisSpacing: 1.0,
-          crossAxisSpacing: 1.0,
-          children: <Widget>[
-            ...?_media?.map(
-              (medium) => GestureDetector(
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => ViewerPage(medium))),
-                child: Container(
-                  color: Colors.grey[300],
-                  child: FadeInImage(
-                    fit: BoxFit.cover,
-                    placeholder: MemoryImage(kTransparentImage),
-                    image: ThumbnailProvider(
-                      mediumId: medium.id,
-                      mediumType: medium.mediumType,
-                      highQuality: true,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -291,81 +187,13 @@ class ViewerPage extends StatelessWidget {
           title: date != null ? Text(date.toLocal().toString()) : null,
         ),
         body: Container(
-          alignment: Alignment.center,
-          child: medium.mediumType == MediumType.image
-              ? FadeInImage(
-                  fit: BoxFit.cover,
-                  placeholder: MemoryImage(kTransparentImage),
-                  image: PhotoProvider(mediumId: medium.id),
-                )
-              : VideoProvider(
-                  mediumId: medium.id,
-                ),
-        ),
+            alignment: Alignment.center,
+            child: FadeInImage(
+              fit: BoxFit.cover,
+              placeholder: MemoryImage(kTransparentImage),
+              image: PhotoProvider(mediumId: medium.id),
+            )),
       ),
     );
-  }
-}
-
-class VideoProvider extends StatefulWidget {
-  final String mediumId;
-
-  const VideoProvider({
-    required this.mediumId,
-  });
-
-  @override
-  _VideoProviderState createState() => _VideoProviderState();
-}
-
-class _VideoProviderState extends State<VideoProvider> {
-  VideoPlayerController? _controller;
-  File? _file;
-
-  @override
-  void initState() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      initAsync();
-    });
-    super.initState();
-  }
-
-  Future<void> initAsync() async {
-    try {
-      _file = await PhotoGallery.getFile(mediumId: widget.mediumId);
-      _controller = VideoPlayerController.file(_file!);
-      _controller?.initialize().then((_) {
-        setState(() {});
-      });
-    } catch (e) {
-      print("Failed : $e");
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return _controller == null || !_controller!.value.isInitialized
-        ? Container()
-        : Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              AspectRatio(
-                aspectRatio: _controller!.value.aspectRatio,
-                child: VideoPlayer(_controller!),
-              ),
-              FloatingActionButton(
-                onPressed: () {
-                  setState(() {
-                    _controller!.value.isPlaying
-                        ? _controller!.pause()
-                        : _controller!.play();
-                  });
-                },
-                child: Icon(
-                  _controller!.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                ),
-              ),
-            ],
-          );
   }
 }
