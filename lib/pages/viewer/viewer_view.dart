@@ -9,7 +9,7 @@ class ViewerView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    DateTime? date = medium.creationDate ?? medium.modifiedDate;
+    DateTime? date = medium.modifiedDate;
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
@@ -17,12 +17,13 @@ class ViewerView extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(Icons.arrow_back_ios),
           ),
-          title: date != null ? Text(date.toLocal().toString()) : null,
+          title: date != null ? Text(date.toString()) : null,
         ),
         body: Container(
             alignment: Alignment.center,
             child: FadeInImage(
-              fit: BoxFit.cover,
+              height: medium.height!.toDouble(),
+              width: medium.width!.toDouble(),
               placeholder: MemoryImage(kTransparentImage),
               image: PhotoProvider(mediumId: medium.id),
             )),

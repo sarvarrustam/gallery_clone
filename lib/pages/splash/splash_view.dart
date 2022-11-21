@@ -13,7 +13,7 @@ class SplashView extends StatefulWidget {
 class _SplashViewState extends State<SplashView> {
   @override
   void didChangeDependencies() {
-    Timer(const Duration(seconds: 1), () {
+    Timer(const Duration(milliseconds: 20), () {
       Navigator.pushReplacement(context,
           MaterialPageRoute(builder: (context) => const TabbarScreen()));
     });

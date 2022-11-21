@@ -23,11 +23,13 @@ class _MainViewState extends State<MainView> {
   MediaPage? _medium;
   List<Medium>? _listMedium;
   bool _loading = false;
+  DateTime? dateTime;
 
   Future<bool> _promptPermissionSetting() async {
     if (Platform.isIOS &&
             await Permission.storage.request().isGranted &&
-            await Permission.photos.request().isGranted ||
+            await Permission.photos.request().isGranted &&
+            await Permission.videos.request().isGranted ||
         Platform.isAndroid && await Permission.storage.request().isGranted) {
       return true;
     }
@@ -40,6 +42,7 @@ class _MainViewState extends State<MainView> {
       List<Album> albums =
           await PhotoGallery.listAlbums(mediumType: MediumType.image);
       _medium = await albums.first.listMedia();
+
       setState(() {
         _albums = albums;
         _loading = false;
@@ -55,12 +58,14 @@ class _MainViewState extends State<MainView> {
   void initState() {
     super.initState();
     _loading = true;
+
     initAsync();
   }
 
   @override
   void didChangeDependencies() {
     size = MediaQuery.of(context).size;
+
     super.didChangeDependencies();
   }
 
@@ -133,30 +138,40 @@ class _MainViewState extends State<MainView> {
           ? const Center(
               child: CircularProgressIndicator(),
             )
-          : GridView.count(
-              crossAxisCount: 3,
-              mainAxisSpacing: 1.0,
-              crossAxisSpacing: 1.0,
-              children: [
-                ..._listMedium!.map(
-                  (item) => GestureDetector(
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => ViewerView(item))),
-                    child: Container(
-                      color: Colors.grey[300],
-                      child: FadeInImage(
-                        fit: BoxFit.cover,
-                        placeholder: MemoryImage(kTransparentImage),
-                        image: ThumbnailProvider(
-                          mediumId: item.id,
-                          mediumType: item.mediumType,
-                          highQuality: true,
+          : GridView.builder(
+              shrinkWrap: true,
+              itemCount: _listMedium!.length,
+              padding: const EdgeInsets.all(1),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3),
+              itemBuilder: (context, index) {
+                Medium item = _listMedium![index];
+                return Column(
+                  children: [
+                    SizedBox(
+                      width: 110,
+                      height: 110,
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (context) => ViewerView(item))),
+                        child: Container(
+                          color: Colors.grey[300],
+                          child: FadeInImage(
+                            fit: BoxFit.cover,
+                            placeholder: MemoryImage(kTransparentImage),
+                            image: ThumbnailProvider(
+                              mediumId: item.id,
+                              mediumType: item.mediumType,
+                              highQuality: true,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             ),
 
       //? floting action button them changer
